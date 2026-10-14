@@ -99,6 +99,104 @@ Within `rag -c`, developers use slash commands to toggle rich observability feat
 | `/help` | Session | Displays the full reference table of extensions and slash commands. | `/help` |
 | `/exit`, `/quit` | Session | Cleanly exits the chat shell. | `/exit` |
 
+### Conversational Interaction & Example Sessions Inside `rag -c`
+
+Within `rag -c`, developers interact naturally using conversational questions while seamlessly applying runtime overrides, toggling visual observability metrics, or inspecting session state without leaving the shell:
+
+#### 1. Grounded Conversational Q&A
+Direct inquiries execute the full retrieval and streaming synthesis pipeline with inline citations and sources:
+```text
+🔱 rag> What is parent-child chunking and how does it prevent context fragmentation?
+
+RAGnarok (strategy=hybrid, rerank=on, budget=4000)
+
+Parent-child chunking decouples the text units used for search from the context units used for generation [1]. Only child chunks (128–256 tokens) are embedded and indexed into TurboVec and BM25s, while parent chunks (up to 2000 tokens) are stored in PostgreSQL [2]. When a child chunk matches during retrieval, its parent_chunk_id is used to fetch the complete parent section, preventing fragmented context windows [1].
+
+Model: groq/openai/gpt-oss-20b | TTFT: 142ms | Total: 580ms | Fallback: No
+
+Sources:
+[1] 04_parent_child.md > Decoupled Indexing Architecture (Score: 0.94)
+[2] 02_chunking.md > Structural Heading Hierarchy (Score: 0.89)
+```
+
+#### 2. Live Observability Extensions
+Toggle detailed latency waterfalls and candidate rank provenance tables after every response:
+- **`/waterfall`**: Toggles real-time latency waterfall chart:
+  ```text
+  🔱 rag> /waterfall
+  ✓ Waterfall display: on
+
+  🔱 rag> How does RAGnarok deduplicate files?
+  ...
+  Pipeline Latency Waterfall:
+    Retrieval          : [██████████░░░░░░░░░░]     42 ms ( 7.2%)
+    Reranking          : [██████████████░░░░░░]     68 ms (11.7%)
+    Context Expansion  : [███░░░░░░░░░░░░░░░░░]     15 ms ( 2.6%)
+    Generation TTFT    : [████████████████████]    142 ms (24.5%)
+    Stream Synthesis   : [████████████████████]    313 ms (54.0%)
+  ```
+- **`/provenance`**: Toggles candidate score and rank provenance table:
+  ```text
+  🔱 rag> /provenance
+  ✓ Provenance display: on
+  ```
+
+#### 3. Runtime Parameter Overrides
+Dynamically tune retrieval behavior for subsequent conversation turns without restarting the session:
+- **`/strategy <lexical|dense|hybrid>`**: Dynamically switches retrieval mode:
+  ```text
+  🔱 rag> /strategy dense
+  ✓ Strategy set to: dense
+
+  🔱 rag> /strategy hybrid
+  ✓ Strategy set to: hybrid
+  ```
+- **`/rerank <on|off>`**: Dynamically toggles the Cross-Encoder reranker:
+  ```text
+  🔱 rag> /rerank off
+  ✓ Reranking disabled
+
+  🔱 rag> /rerank on
+  ✓ Reranking enabled
+  ```
+- **`/budget <tokens>`**: Adjusts context window token budget dynamically:
+  ```text
+  🔱 rag> /budget 3500
+  ✓ Token budget set to: 3500
+  ```
+
+#### 4. Session Controls & Inspection
+- **`/stats`**: Displays real-time session statistics and active runtime overrides:
+  ```text
+  🔱 rag> /stats
+
+  Session Statistics:
+    Queries Executed : 3
+    History Entries  : 6
+    Strategy         : hybrid
+    Reranking        : on
+    Token Budget     : 3500
+    Waterfall Display: on
+    Provenance Table : off
+  ```
+- **`/clear`**: Resets the conversation buffer and turns:
+  ```text
+  🔱 rag> /clear
+  Conversation history cleared.
+  ```
+- **`/help`**: Renders the complete slash command reference table.
+- **`/exit`** (or **`/quit`**): Exits the chat shell cleanly.
+
+#### 5. Developer Command Interceptor (Guardrail)
+If a developer accidentally runs an administrative or testing command inside `rag -c`, the shell intercepts it and directs them to `rag -dev`:
+```text
+🔱 rag> ingest docs/
+
+Notice: 'ingest' is a developer workspace command.
+The chat shell is dedicated to conversational Q&A. To execute document ingestion, index rebuilds, or component probes, exit and run:
+  rag -dev  (or 'rag --dev')
+```
+
 ---
 
 ## 4. Interactive Developer Workspace (`rag -dev` / `rag dev`)
