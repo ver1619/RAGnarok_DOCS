@@ -1,6 +1,6 @@
 # RAGnarok — System Architecture
 
-> **RAGnarok** is a high-performance, local Python-based Retrieval-Augmented Generation (RAG) system. It combines Docling document parsing, parent-child chunking, configurable retrieval strategies (BM25s lexical search, TurboVec dense vector similarity, or Hybrid fusion), Cross-Encoder reranking, native guardrails, and DeepEval CI/CD evaluation loops.
+> **RAGnarok** is a high-performance, local Python-based Retrieval-Augmented Generation (RAG) system. It combines Docling document parsing, parent-child chunking, configurable retrieval strategies (BM25s lexical search, TurboVec dense vector similarity, and Hybrid fusion), Cross-Encoder reranking, native guardrails, and DeepEval CI/CD evaluation loops.
 
 ---
 
@@ -54,7 +54,7 @@ flowchart TD
         Embedder --> TurboVec["TurboVec Vector Index\n(data/indexes/dense/)"]
         
         Children -->|Child Text| LexTokenizer["BM25s Tokenizer\n(Stemming, Stopwords)"]
-        LexTokenizer --> BM25Index["BM25s Inverted Index\n(data/indexes/lexical/)"]
+        LexTokenizer --> BM25Index["BM25s Inverted Index\n(data/indexes/bm25/)"]
     end
 ```
 
@@ -118,33 +118,37 @@ Safety and quality are enforced at every boundary:
 
 ```mermaid
 flowchart TD
-    subgraph GuardrailsAndGeneration ["Runtime Generation & Guardrails"]
-        RawQuery["Raw User Query"] --> InGuardFast{"Tier 1: Deterministic Guard\n(Length, Escapes, Injections)"}
+    subgraph GuardrailsAndGeneration ["Runtime Generation and Guardrails"]
+        direction TD
+        RawQuery["Raw User Query"] --> InGuardFast{"Tier 1: Deterministic Guard<br/>(Length, Escapes, Injections)"}
         InGuardFast -- "Failed" --> InRefusal["Standardized Safety Refusal"]
-        InGuardFast -- "Passed" --> InGuardSemantic{"Tier 2: Semantic Guard\n(Topicality & Overrides)"}
+        InGuardFast -- "Passed" --> InGuardSemantic{"Tier 2: Semantic Guard<br/>(Topicality and Overrides)"}
         
         InGuardSemantic -- "Failed" --> InRefusal
-        InGuardSemantic -- "Passed" --> CoreRetrieval["Core Retrieval & Context Assembly"]
+        InGuardSemantic -- "Passed" --> CoreRetrieval["Core Retrieval and Context Assembly"]
         
-        CoreRetrieval --> PromptBuild["Prompt Formulation\n(System Rules + Context Blocks + Query)"]
-        PromptBuild --> LLMEngine["litellm Synthesis Engine\n(Multi-Model Fallback Chain)"]
+        CoreRetrieval --> PromptBuild["Prompt Formulation<br/>(System Rules + Context Blocks + Query)"]
+        PromptBuild --> LLMEngine["litellm Synthesis Engine<br/>(Multi-Model Fallback Chain)"]
         
-        LLMEngine --> TokenStream["Real-Time Token Streaming\n(Sub-500ms TTFT)"]
-        TokenStream --> CitationMapper["Citation & Provenance Resolver\n(Inline [1], [2] to Footnotes)"]
+        LLMEngine --> TokenStream["Real-Time Token Streaming<br/>(Sub-500ms TTFT)"]
+        TokenStream --> CitationMapper["Citation and Provenance Resolver<br/>(Inline #91;1#93;, #91;2#93; to Footnotes)"]
         
-        CitationMapper --> OutGuard{"Output Guardrails\n(PII Scanner & Faithfulness)"}
+        CitationMapper --> OutGuard{"Output Guardrails<br/>(PII Scanner and Faithfulness)"}
         OutGuard -- "Failed (Hallucination)" --> OutFallback["Grounding Warning / Fallback Notice"]
-        OutGuard -- "Passed / Redacted" --> FinalOutput["Final Rendered Terminal Output\n• Streamed Grounded Answer\n• Numbered Citations & Footnotes\n• Provenance / Latency Drawer"]
+        OutGuard -- "Passed / Redacted" --> FinalOutput["Final Rendered Terminal Output<br/>- Streamed Grounded Answer<br/>- Numbered Citations and Footnotes<br/>- Provenance / Latency Drawer"]
     end
 
     subgraph CI_CD_Evals ["CI/CD Evaluation Loop (DeepEval)"]
-        PR["Pull Request Created"] --> LoadGolden["Load Golden Dataset\n(tests/data/golden_dataset.json)"]
-        LoadGolden --> RunDeepEval["DeepEval Test Runner\n(pytest tests/evals/)"]
-        RunDeepEval --> Judge["LLM-as-a-Judge\n(Precision, Recall, Faithfulness, Relevancy)"]
-        Judge --> EvalGate{"All Scores >= 0.85?"}
+        direction TD
+        PR["Pull Request Created"] --> LoadGolden["Load Golden Dataset<br/>(tests/data/golden_dataset.json)"]
+        LoadGolden --> RunDeepEval["DeepEval Test Runner<br/>(pytest tests/evals/)"]
+        RunDeepEval --> Judge["LLM-as-a-Judge<br/>(Precision, Recall, Faithfulness, Relevancy)"]
+        Judge --> EvalGate{"All Scores #8805; 0.85?"}
         EvalGate -- "YES" --> PRPass["PR Approved"]
         EvalGate -- "NO" --> PRFail["PR Blocked (Regression Detected)"]
     end
+
+    FinalOutput ~~~ PR
 ```
 
 ---
@@ -162,11 +166,11 @@ flowchart TD
         MD --> Chunk["Parent-Child Chunker\n(Heading & Token Boundaries)"]
         Chunk --> PG[("PostgreSQL\n(documents, parent_chunks,\nchunks, processing_jobs)")]
         Chunk --> DenseIdx[("TurboVec Vector Index\n(data/indexes/dense/)")]
-        Chunk --> LexIdx[("BM25s Lexical Index\n(data/indexes/lexical/)")]
+        Chunk --> LexIdx[("BM25s Lexical Index\n(data/indexes/bm25/)")]
     end
 
     subgraph QUERY ["2. Input Guardrails & Query Routing"]
-        User["User Terminal\n(CLI / TUI)"] --> InGuard{"Input Guardrails\n(Fast-path + Semantic)"}
+        User["User Terminal\n(CLI: rag -c / rag -dev)"] --> InGuard{"Input Guardrails\n(Fast-path + Semantic)"}
         InGuard -- "Passed" --> SelfRAG{"Self-RAG Gate\nRetrieval Needed?"}
         InGuard -- "Blocked" --> SafetyRefusal["Standardized Safety Refusal"]
         SafetyRefusal --> User
@@ -193,12 +197,12 @@ flowchart TD
         SelfRAG -- "NO (Direct Answer)" --> LLMEngine["litellm Synthesis Engine\n(Multi-Model Fallback Chain)"]
         PromptForm --> LLMEngine
         
-        LLMEngine --> TokenStream["Async Token Stream\n(Incremental Terminal Output)"]
-        TokenStream --> CitationMapper["Citation & Footnote Resolver\n(Inline [1], [2] to Documents)"]
-        CitationMapper --> OutGuard{"Output Guardrails\n(PII Scanner & Faithfulness)"}
+        LLMEngine --> TokenStream["Async Token Stream<br/>(Incremental Terminal Output)"]
+        TokenStream --> CitationMapper["Citation and Footnote Resolver<br/>(Inline #91;1#93;, #91;2#93; to Documents)"]
+        CitationMapper --> OutGuard{"Output Guardrails<br/>(PII Scanner and Faithfulness)"}
         
         OutGuard -- "Failed (Hallucination)" --> WarningNotice["Grounding Warning / Fallback Notice"]
-        OutGuard -- "Passed / Clean" --> RenderedOutput["Rendered Terminal Presentation\n• Streamed Answer Text\n• Numbered Source Citations\n• Heading & Document Footnotes"]
+        OutGuard -- "Passed / Clean" --> RenderedOutput["Rendered Terminal Presentation<br/>- Streamed Answer Text<br/>- Numbered Source Citations<br/>- Heading and Document Footnotes"]
         
         RenderedOutput --> User
         WarningNotice --> User

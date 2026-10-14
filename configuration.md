@@ -101,19 +101,17 @@ max_input_tokens = 8192
 max_tokens = 4000
 
 [dense_retrieval]
-provider = "openai"
-model = "text-embedding-3-small"
-vector_dimension = 1536
+provider = "sentence-transformers"
+model = "BAAI/bge-small-en-v1.5"
+vector_dimension = 384
 batch_size = 100
 similarity_metric = "cosine"
-top_n = 25
 
 [lexical_retrieval]
 library = "bm25s"
 case = "lowercase"
 stop_words_removed = true
 stemming_enabled = true
-top_n = 25
 
 [hybrid_retrieval]
 k = 60
@@ -126,7 +124,7 @@ top_k = 10
 
 [query_rewriting]
 enabled = true
-model = "gpt-4o-mini"
+model = "groq/openai/gpt-oss-20b"
 
 [adaptive_retrieval]
 enabled = true
@@ -135,6 +133,7 @@ default_strategy = "hybrid"
 [self_rag]
 enabled = true
 decision_method = "llm"
+model = "groq/openai/gpt-oss-20b"
 
 [guardrails]
 enabled = true
@@ -142,18 +141,40 @@ strict_mode = false
 max_query_tokens = 1024
 enable_pii_filter = true
 enable_injection_detection = true
-model = "groq/llama-3.1-8b-instant"
+model = "groq/openai/gpt-oss-20b"
 
 [evals]
 framework = "deepeval"
+judge_model = "gpt-4o"
 golden_dataset_path = "tests/data/golden_dataset.json"
-metrics = ["context_precision", "context_recall", "faithfulness", "answer_relevancy"]
-threshold = 0.85
+
+[evals.thresholds]
+context_precision = 0.85
+context_recall = 0.85
+faithfulness = 0.90
+answer_relevancy = 0.85
 
 [generation]
-model = "gpt-4o"
+model = "groq/openai/gpt-oss-20b"
 temperature = 0.1
 max_tokens = 1500
 stream = true
 timeout_seconds = 15.0
+
+[generation.fallbacks]
+enabled = true
+models = [
+  "groq/qwen/qwen3.8-27b",
+  "groq/openai/gpt-oss-120b"
+]
+
+[generation.citations]
+enabled = true
+format = "bracketed"
+show_provenance = true
+
+[cli]
+theme = "dark"
+show_waterfall = true
+show_provenance = true
 ```

@@ -24,6 +24,7 @@
 5. **Parent Context Expansion**: Top-ranked child matches resolve back to their parent context blocks in PostgreSQL, eliminating fragmented context windows.
 6. **Token-Budgeted Context Management & Synthesis**: Strict context window deduplication and packing, followed by asynchronous token streaming via **`litellm`** with verifiable, numbered inline citations (`[1]`, `[2]`).
 7. **Native Guardrails & DeepEval CI/CD**: Two-tier guardrails (deterministic fast-path and semantic validation) on input and output, combined with automated **DeepEval** regression testing against golden datasets.
+8. **Developer Deck & Dual CLI Environments**: Streamlined interactive dual runtime environments separating grounded conversational Q&A () from local ingestion, diagnostics, and component probing (), alongside document staging commands ().
 
 ---
 
@@ -49,6 +50,7 @@ The technical specifications are organized below in logical pipeline order, trac
 | **14** | [`context_management.md`](./context_management.md) | **Context Management** | Deduplication of overlapping parent contexts, token budget allocation, lost-in-the-middle reordering, and prompt context payload construction. |
 | **15** | [`generation.md`](./generation.md) | **Generation & Citations** | Synthesis engine using `litellm`, async streaming response handling, fallback provider chains, and verifiable inline citation mapping. |
 | **16** | [`evals.md`](./evals.md) | **Evaluation & CI/CD** | Automated regression testing suite using `DeepEval`, LLM-as-a-judge scoring (Precision, Recall, Faithfulness), and CI/CD quality gates. |
+| **17** | [`rag_cli.md`](./rag_cli.md) | **CLI Operations & Architecture** | Streamlined dual-environment CLI architecture: interactive chat shell (`rag -c`), developer workspace (`rag -dev`), and staging/ingestion commands. |
 
 ---
 
@@ -62,3 +64,4 @@ The technical specifications are organized below in logical pipeline order, trac
 | 🔍 **Routing & Retrieval** | [`query_rewriting_adaptive_retrieval.md`](./query_rewriting_adaptive_retrieval.md)<br>[`lexical.md`](./lexical.md)<br>[`dense.md`](./dense.md)<br>[`hybrid_retrieval_model.md`](./hybrid_retrieval_model.md)<br>[`result_contract.md`](./result_contract.md) | Query rewriting, BM25s lexical search, TurboVec vector similarity, RRF hybrid fusion, and result schemas. |
 | ✍️ **Context & Synthesis** | [`context_management.md`](./context_management.md)<br>[`generation.md`](./generation.md) | Context window deduplication, token budgeting, LiteLLM async streaming, and inline citation binding. |
 | 📊 **Evaluation & CI/CD** | [`evals.md`](./evals.md) | DeepEval regression testing suite, LLM-as-a-judge scoring, and CI/CD quality gates. |
+| 💻 **CLI & Operational Deck** | [`rag_cli.md`](./rag_cli.md) | Streamlined dual-environment runtime (`rag -c` Chat Shell, `rag -dev` Developer Workspace), document staging, and component probing. |
